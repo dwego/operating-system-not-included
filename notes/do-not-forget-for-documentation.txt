@@ -1,0 +1,4 @@
+ARM Arch don't have a specific register for accumulator
+ARM ADD Example:
+
+    ADD R2, R0, R1: R2 = R0 + R1
