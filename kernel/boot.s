@@ -2,17 +2,42 @@
 .cpu cortex-m3
 .thumb
 
-.section .vectors
-.word 0x20005000            @ Stack pointer address (This number is the RAM top address 20 kB)
-.word reset_handler + 1     @ Boot address (+1 for set thumb mode)
+.extern kernel_main
+.extern nmi_handler
+.extern hard_fault_handler
+.extern default_handler
 
-.section .text
+.section .vectors, "a", %progbits
+.balign 4
+
+.global vector_table
+vector_table:
+    .word 0x20005000          @ Initial MSP
+    .word reset_handler       @ Reset
+    .word nmi_handler         @ NMI
+    .word hard_fault_handler  @ HardFault
+    .word default_handler     @ MemManage
+    .word default_handler     @ BusFault
+    .word default_handler     @ UsageFault
+
+    .word 0                   @ Reserved
+    .word 0                   @ Reserved
+    .word 0                   @ Reserved
+    .word 0                   @ Reserved
+
+    .word default_handler     @ SVCall
+    .word default_handler     @ DebugMonitor
+    .word 0                   @ Reserved
+    .word default_handler     @ PendSV
+    .word default_handler     @ SysTick
+
+.section .text.reset_handler, "ax", %progbits
 .global reset_handler
+.type reset_handler, %function
+.thumb_func
 
 reset_handler:
-    mov r0, #10           @ Move number 10 to the r0 register
-    mov r1, #20           @ Move number 20 to the r1 register
-    add r2, r0, r1        @ r2 = r0 + r1 (30)
+    bl kernel_main
 
-loop:
-    b loop       @ OS Idle
+reset_hang:
+    b reset_hang
