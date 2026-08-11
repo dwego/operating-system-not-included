@@ -9,9 +9,7 @@
 .thumb_func
 
 kernel_main:
-    movs r0, #10
-    movs r1, #20
-    adds r2, r0, r1
+    svc #0 @ TESTING DEFAULT_HANDLER FUNCTION
 
-kernel_idle:
-    b kernel_idle
+1:
+    b 1b
