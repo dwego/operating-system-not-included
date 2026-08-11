@@ -1,48 +1,56 @@
-TARGET := build/os.elf
+TARGET := kernel
 
+CC := arm-none-eabi-gcc
 AS := arm-none-eabi-as
 LD := arm-none-eabi-ld
+OBJCOPY := arm-none-eabi-objcopy
 
+CFLAGS := -mcpu=cortex-m3 -mthumb -ffreestanding -nostdlib -Wall -Wextra -g
 ASFLAGS := -mcpu=cortex-m3 -mthumb -g
-LDFLAGS := -T kernel/linker.ld
 
-OBJECTS := \
+OBJS := \
 	build/boot.o \
-	build/handlers.o \
-	build/kernel.o
+	build/memory.o \
+	build/state.o \
+	build/kernel.o \
+	build/handlers.o
 
-all: $(TARGET)
+all: build/$(TARGET).elf
 
-$(TARGET): $(OBJECTS) kernel/linker.ld
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+build:
+	mkdir -p build
 
-build/boot.o: kernel/boot.s
-	@mkdir -p build
+build/boot.o: kernel/boot.s | build
 	$(AS) $(ASFLAGS) $< -o $@
 
-build/handlers.o: kernel/handlers.s
-	@mkdir -p build
+build/memory.o: kernel/memory.s | build
 	$(AS) $(ASFLAGS) $< -o $@
 
-build/kernel.o: kernel/kernel.s
-	@mkdir -p build
+build/state.o: kernel/state.s | build
 	$(AS) $(ASFLAGS) $< -o $@
 
-run: all
+build/kernel.o: kernel/kernel.s | build
+	$(AS) $(ASFLAGS) $< -o $@
+
+build/handlers.o: kernel/handlers.c | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/$(TARGET).elf: $(OBJS)
+	$(LD) -T linker.ld $(OBJS) -o $@
+
+run: build/$(TARGET).elf
 	qemu-system-arm \
-		-machine mps2-an385 \
-		-cpu cortex-m3 \
-		-kernel $(TARGET)
+		-M mps2-an385 \
+		-kernel build/$(TARGET).elf \
+		-nographic
 
-debug: all
+debug: build/$(TARGET).elf
 	qemu-system-arm \
-		-machine mps2-an385 \
-		-cpu cortex-m3 \
-		-kernel $(TARGET) \
+		-M mps2-an385 \
+		-kernel build/$(TARGET).elf \
+		-nographic \
 		-S \
-		-s
+		-gdb tcp::1234
 
 clean:
 	rm -rf build
-
-.PHONY: all run debug clean
