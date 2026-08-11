@@ -19,3 +19,13 @@ void default_handler(void) {
     while (1) {
     }
 }
+
+void hard_fault_handler(void) {
+    while (1) {
+    }
+}
+
+void nmi_handler(void) {
+    while (1) {
+    }
+}
